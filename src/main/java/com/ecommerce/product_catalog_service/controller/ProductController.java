@@ -31,12 +31,6 @@ public class ProductController {
     public ResponseEntity<Product> createProduct(@Valid @RequestBody CreateProductRequest request) {
         Product savedProduct = productService.createProduct(request);
 
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(savedProduct.getId())
-                .toUri();
-
-        return ResponseEntity.created(location).body(savedProduct);
+        return ResponseEntity.status(201).body(savedProduct);
     }
 }

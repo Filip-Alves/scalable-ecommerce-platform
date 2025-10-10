@@ -1,4 +1,6 @@
 **/application.properties
+**/application-local.properties
+.env
 
 HELP.md
 target/
