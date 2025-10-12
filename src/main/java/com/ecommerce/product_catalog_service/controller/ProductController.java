@@ -4,6 +4,7 @@ import com.ecommerce.product_catalog_service.dto.CreateProductRequest;
 import com.ecommerce.product_catalog_service.model.Product;
 import com.ecommerce.product_catalog_service.service.ProductService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -39,5 +40,12 @@ public class ProductController {
         Product savedProduct = productService.createProduct(request);
 
         return ResponseEntity.status(201).body(savedProduct);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProductById(@PathVariable Long id) {
+        productService.deleteProduct(id);
+
+        return ResponseEntity.noContent().build();
     }
 }
