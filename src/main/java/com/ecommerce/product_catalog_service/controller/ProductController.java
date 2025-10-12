@@ -1,6 +1,7 @@
 package com.ecommerce.product_catalog_service.controller;
 
 import com.ecommerce.product_catalog_service.dto.CreateProductRequest;
+import com.ecommerce.product_catalog_service.dto.UpdateProductRequest;
 import com.ecommerce.product_catalog_service.model.Product;
 import com.ecommerce.product_catalog_service.service.ProductService;
 import jakarta.validation.Valid;
@@ -40,6 +41,13 @@ public class ProductController {
         Product savedProduct = productService.createProduct(request);
 
         return ResponseEntity.status(201).body(savedProduct);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @Valid @RequestBody UpdateProductRequest request) {
+        Product updatedProduct = productService.updateProduct(id, request);
+
+        return ResponseEntity.ok(updatedProduct);
     }
 
     @DeleteMapping("/{id}")
