@@ -9,6 +9,7 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
       - postgres
+      - consul
 
   postgres:
     image: postgres:15
@@ -21,6 +22,13 @@ services:
       - "5433:5432"  # 5432 est utilisé par mon psql local :/
     volumes:
       - postgres-data:/var/lib/postgresql/data
+
+  consul:
+    image: hashicorp/consul:1.15
+    container_name: ecommerce-consul
+    ports:
+      - "8500:8500"
+    command: "agent -server -bootstrap-expect=1 -ui -client=0.0.0.0" # Lance Consul en mode dev
 
 volumes:
   postgres-data:
