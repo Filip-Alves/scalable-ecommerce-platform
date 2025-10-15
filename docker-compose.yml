@@ -1,9 +1,21 @@
 services:
-  app:
-    build: .
-    container_name: ecommerce-app
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+    image: ecommerce/api-gateway
+    container_name: ecommerce-gateway
     ports:
-      - "8080:8080"
+      - "8080:8080" # Seule la gateway expose son port
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - consul
+
+  product-catalog-service:
+    build:
+      context: ./services/product-catalog-service
+    image: ecommerce/product-catalog-service
+    container_name: ecommerce-product-service
     environment:
       # Dit à Spring d'utiliser le profil 'docker'
       - SPRING_PROFILES_ACTIVE=docker
@@ -32,3 +44,4 @@ services:
 
 volumes:
   postgres-data:
+    name: ecommerce-postgres-data
