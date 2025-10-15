@@ -1,38 +1,62 @@
-**/application.properties
-**/application-local.properties
-**/application-docker.properties
-.env
+# =========================
+# IDEs
+# =========================
 
-HELP.md
-target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
-
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
+# IntelliJ IDEA
+.idea/
 *.iml
+out/
 *.ipr
+*.iws
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
+# VS Code
 .vscode/
+.history/
+*.code-workspace
+
+# =========================
+# Build Tools
+# =========================
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# =========================
+# Java / Spring
+# =========================
+
+# Compiled files
+*.class
+
+# Archives
+*.jar
+*.war
+*.ear
+
+# Logs & temp
+logs/
+*.log
+*.tmp
+*.bak
+*.swp
+
+# Spring Boot configs
+*.env
+application-*.yml
+application-*.properties
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
