@@ -1,27 +1,68 @@
 services:
   api-gateway:
-    build:
-      context: ./services/api-gateway
+    build: { context: ./services/api-gateway }
     image: ecommerce/api-gateway
     container_name: ecommerce-gateway
-    ports:
-      - "8080:8080" # Seule la gateway expose son port
+    ports: ["8080:8080"]
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - SERVICE_NAME=api-gateway
     depends_on:
       - consul
+      - logstash
+    restart: always
 
   product-catalog-service:
-    build:
-      context: ./services/product-catalog-service
+    build: { context: ./services/product-catalog-service }
     image: ecommerce/product-catalog-service
     container_name: ecommerce-product-service
     environment:
-      # Dit à Spring d'utiliser le profil 'docker'
       - SPRING_PROFILES_ACTIVE=docker
+      - SERVICE_NAME=product-catalog-service
     depends_on:
       - postgres
       - consul
+      - logstash
+    restart: always
+
+  logstash:
+    build: { context: ./logstash_build } # build custom
+    image: ecommerce/logstash-custom
+    container_name: ecommerce-logstash
+    ports: ["5000:5000"]
+    volumes: [./logstash/pipeline:/usr/share/logstash/pipeline:ro]
+    depends_on:
+      - elasticsearch
+    restart: always
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.7.0
+    container_name: ecommerce-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports: ["9200:9200"]
+    volumes: [es-data:/usr/share/elasticsearch/data]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'curl -s http://localhost:9200/_cluster/health | grep -vq ''"status":"red"''',
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.7.0
+    container_name: ecommerce-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200 # Dit à Kibana où trouver Elasticsearch
+    depends_on:
+      - elasticsearch
 
   postgres:
     image: postgres:15
@@ -31,7 +72,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5433:5432"  # 5432 est utilisé par mon psql local :/
+      - "5433:5432" # 5432 est utilisé par mon psql local :/
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
@@ -45,3 +86,5 @@ services:
 volumes:
   postgres-data:
     name: ecommerce-postgres-data
+  es-data: # volume pour Elasticsearch
+    driver: local
