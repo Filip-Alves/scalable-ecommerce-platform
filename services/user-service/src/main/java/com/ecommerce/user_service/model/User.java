@@ -1,9 +1,7 @@
 package com.ecommerce.user_service.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Getter
@@ -26,4 +24,11 @@ public class User {
 
     @Column(name = "password")
     private String password;
+
+    public User(String firstName, String password, String email, String lastName) {
+        this.firstName = firstName;
+        this.password = password;
+        this.email = email;
+        this.lastName = lastName;
+    }
 }
