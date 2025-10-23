@@ -6,11 +6,13 @@ import com.ecommerce.user_service.dto.LoginResponse;
 import com.ecommerce.user_service.dto.RegisterUserRequest;
 import com.ecommerce.user_service.dto.UserResponse;
 import com.ecommerce.user_service.model.User;
+import com.ecommerce.user_service.security.JwtService;
 import com.ecommerce.user_service.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/users")
@@ -40,5 +42,15 @@ public class UserController {
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
         LoginResponse loginResponse = userService.login(loginRequest);
         return ResponseEntity.ok(loginResponse);
+    }
+
+    @GetMapping("/validate")
+    public ResponseEntity<LoginResponse> validate(@RequestParam String token) {
+        boolean valid = userService.validate(token);
+        if (valid) {
+            return ResponseEntity.ok().build();
+        } else {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token");
+        }
     }
 }

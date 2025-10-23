@@ -47,4 +47,11 @@ public class UserService {
 
         return new LoginResponse(jwtService.generateToken(connectedUser));
     }
+
+    public boolean validate(String token) {
+        String email = jwtService.extractUsername(token);
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+
+        return jwtService.isTokenValid(token, user);
+    }
 }
