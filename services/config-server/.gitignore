@@ -1,8 +1,5 @@
-**/application.properties
-**/application-local.properties
-**/application-docker.properties
-**/bootstrap.properties
-.env
+*.properties
+
 
 HELP.md
 target/

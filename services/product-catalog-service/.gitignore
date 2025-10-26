@@ -1,6 +1,7 @@
 **/application.properties
 **/application-local.properties
 **/application-docker.properties
+**/bootstrap.properties
 .env
 
 HELP.md
