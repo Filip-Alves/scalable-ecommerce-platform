@@ -41,6 +41,22 @@ services:
       - logstash
     restart: always
 
+  shopping-cart-service:
+    build:
+      context: ./services/shopping-cart-service
+    image: ecommerce/shopping-cart-service
+    container_name: ecommerce-shopping-cart-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVICE_NAME=shopping-cart-service
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    depends_on:
+      - postgres
+      - consul
+      - logstash
+    restart: always
+
   logstash:
     build: { context: ./logstash_build } # build custom
     image: ecommerce/logstash-custom
