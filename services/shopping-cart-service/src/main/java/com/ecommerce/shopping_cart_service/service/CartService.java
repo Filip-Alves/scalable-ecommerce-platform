@@ -28,27 +28,26 @@ public class CartService {
                 .get()
                 .uri("http://product-catalog-service/api/products/{productId}", productId)
                 .retrieve()
-                .onStatus(status -> status.value() == 404,
-                        response -> Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Produit non trouvé")))
+                .onStatus(HttpStatus.NOT_FOUND::equals,
+                        r -> Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Produit non trouvé")))
                 .bodyToMono(ProductDTO.class)
-                .flatMap(product -> {
-                    return Mono.fromCallable(() -> {
-                        Optional<CartItem> optionalItem = cartItemRepository.findByCartIdAndProductId(userId, productId);
-                        CartItem item;
-                        boolean isNew = false;
-                        if (optionalItem.isPresent()) {
-                            item = optionalItem.get();
-                            item.setQuantity(item.getQuantity() + 1);
-                        } else {
-                            item = new CartItem();
-                            item.setCartId(userId);
-                            item.setProductId(productId);
-                            item.setQuantity(1);
-                            isNew = true;
-                        }
-                        cartItemRepository.save(item);
-                        return isNew;
+                .flatMap(p -> Mono.fromCallable(() -> {
+                    Optional<CartItem> optional = cartItemRepository.findByCartIdAndProductId(userId, productId);
+
+                    CartItem item = optional.orElseGet(() -> {
+                        CartItem newItem = new CartItem();
+                        newItem.setCartId(userId);
+                        newItem.setProductId(productId);
+                        newItem.setQuantity(0);
+                        return newItem;
                     });
-                });
+
+                    boolean isNew = optional.isEmpty();
+
+                    item.setQuantity(item.getQuantity() + 1);
+                    cartItemRepository.save(item);
+                    return isNew;
+                }));
     }
+
 }
