@@ -1,9 +1,11 @@
 package com.ecommerce.api_gateway.filter;
 
+import com.ecommerce.api_gateway.dto.ValidateResponse;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
@@ -36,19 +38,15 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                     .get()
                     .uri("http://user-service/api/users/validate?token=" + token)
                     .retrieve()
-                    .toBodilessEntity()
-                    .flatMap(response -> {
+                    .bodyToMono(ValidateResponse.class)
+                    .flatMap(validateResponse -> {
+                        ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
+                                .header("X-User-Id", String.valueOf(validateResponse.userId()))
+                                .build();
 
-                        if (response.getStatusCode().is2xxSuccessful()) {
-                            return chain.filter(exchange);
-                        } else {
-
-                            return onError(exchange, HttpStatus.UNAUTHORIZED);
-                        }
-                    }).onErrorResume(error -> {
-
-                        return onError(exchange, HttpStatus.INTERNAL_SERVER_ERROR);
-                    });
+                        return chain.filter(exchange.mutate().request(modifiedRequest).build());
+                    })
+                    .onErrorResume(error -> onError(exchange, HttpStatus.UNAUTHORIZED));
         };
     }
 
@@ -57,6 +55,5 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
         return exchange.getResponse().setComplete();
     }
 
-    public static class Config {
-    }
+    public static class Config {}
 }

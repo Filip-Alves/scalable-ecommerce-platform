@@ -1,10 +1,7 @@
 package com.ecommerce.user_service.controller;
 
 
-import com.ecommerce.user_service.dto.LoginRequest;
-import com.ecommerce.user_service.dto.LoginResponse;
-import com.ecommerce.user_service.dto.RegisterUserRequest;
-import com.ecommerce.user_service.dto.UserResponse;
+import com.ecommerce.user_service.dto.*;
 import com.ecommerce.user_service.model.User;
 import com.ecommerce.user_service.security.JwtService;
 import com.ecommerce.user_service.service.UserService;
@@ -45,12 +42,8 @@ public class UserController {
     }
 
     @GetMapping("/validate")
-    public ResponseEntity<LoginResponse> validate(@RequestParam String token) {
-        boolean valid = userService.validate(token);
-        if (valid) {
-            return ResponseEntity.ok().build();
-        } else {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token");
-        }
+    public ResponseEntity<ValidateResponse> validate(@RequestParam String token) {
+        ValidateResponse response = userService.validateAndGetUser(token);
+        return ResponseEntity.ok(response);
     }
 }
