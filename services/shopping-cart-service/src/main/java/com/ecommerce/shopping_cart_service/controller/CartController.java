@@ -2,6 +2,7 @@ package com.ecommerce.shopping_cart_service.controller;
 
 
 import com.ecommerce.shopping_cart_service.dto.CartItemResponse;
+import com.ecommerce.shopping_cart_service.dto.UpdateQuantityRequest;
 import com.ecommerce.shopping_cart_service.service.CartService;
 import jakarta.validation.constraints.Null;
 import org.springframework.http.HttpStatus;
@@ -30,12 +31,31 @@ public class CartController {
                         : ResponseEntity.noContent().build());
     }
 
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<Void> removeFromCart(
+            @RequestHeader("X-User-Id") Long userId,
+            @PathVariable Long productId) {
+
+        cartService.removeItem(userId, productId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{productId}")
+    public ResponseEntity<CartItemResponse> updateQuantity(
+            @RequestHeader("X-User-Id") Long userId,
+            @PathVariable Long productId,
+            @RequestBody UpdateQuantityRequest request) {
+
+        CartItemResponse response = cartService.updateQuantity(userId, productId, request.quantity());
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping
-    public Mono<ResponseEntity<List<CartItemResponse>>> getCart(
+    public ResponseEntity<List<CartItemResponse>> getCart(
             @RequestHeader("X-User-Id") Long userId) {
 
-        return cartService.getCartItems(userId)
-                .map(ResponseEntity::ok);
+        List<CartItemResponse> items = cartService.getCartItems(userId);
+        return ResponseEntity.ok(items);
     }
 
 }

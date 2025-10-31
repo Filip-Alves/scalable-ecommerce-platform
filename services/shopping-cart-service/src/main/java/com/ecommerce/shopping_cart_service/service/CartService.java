@@ -4,6 +4,7 @@ import com.ecommerce.shopping_cart_service.dto.CartItemResponse;
 import com.ecommerce.shopping_cart_service.dto.ProductDTO;
 import com.ecommerce.shopping_cart_service.model.CartItem;
 import com.ecommerce.shopping_cart_service.repository.CartItemRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -16,7 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-
+@Transactional
 @Service
 public class CartService {
 
@@ -55,39 +56,69 @@ public class CartService {
                 }));
     }
 
-    public Mono<List<CartItemResponse>> getCartItems(Long userId) {
+
+    public void removeItem(Long userId, Long productId) {
+        cartItemRepository.deleteByCartIdAndProductId(userId, productId);
+    }
+
+    public CartItemResponse updateQuantity(Long userId, Long productId, Integer quantity) {
+        CartItem item = cartItemRepository.findByCartIdAndProductId(userId, productId)
+                .orElseThrow(() -> new RuntimeException("Item not found"));
+
+        item.setQuantity(quantity);
+        cartItemRepository.save(item);
+
+        ProductDTO product = webClientBuilder.build()
+                .get()
+                .uri("http://product-catalog-service/api/products/{id}", productId)
+                .retrieve()
+                .bodyToMono(ProductDTO.class)
+                .block();
+
+        return new CartItemResponse(
+                item.getProductId(),
+                product.name(),
+                product.price(),
+                item.getQuantity()
+        );
+    }
+
+    public List<CartItemResponse> getCartItems(Long userId) {
         List<CartItem> cartItems = cartItemRepository.findByCartId(userId);
 
         if (cartItems.isEmpty()) {
-            return Mono.just(Collections.emptyList());
+            return Collections.emptyList();
         }
 
         List<Long> productIds = cartItems.stream()
                 .map(CartItem::getProductId)
                 .toList();
 
-        String idsParam = productIds.stream().map(String::valueOf).collect(Collectors.joining(","));
-        return webClientBuilder.build()
+        String idsParam = productIds.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
+
+        List<ProductDTO> products = webClientBuilder.build()
                 .get()
                 .uri("http://product-catalog-service/api/products?ids={ids}", idsParam)
                 .retrieve()
                 .bodyToFlux(ProductDTO.class)
                 .collectList()
-                .map(products -> {
-                    Map<Long, ProductDTO> productMap = products.stream()
-                            .collect(Collectors.toMap(ProductDTO::id, p -> p));
+                .block();
 
-                    return cartItems.stream()
-                            .map(item -> {
-                                ProductDTO product = productMap.get(item.getProductId());
-                                return new CartItemResponse(
-                                        item.getProductId(),
-                                        product.name(),
-                                        product.price(),
-                                        item.getQuantity()
-                                );
-                            })
-                            .toList();
-                });
+        Map<Long, ProductDTO> productMap = products.stream()
+                .collect(Collectors.toMap(ProductDTO::id, p -> p));
+
+        return cartItems.stream()
+                .map(item -> {
+                    ProductDTO product = productMap.get(item.getProductId());
+                    return new CartItemResponse(
+                            item.getProductId(),
+                            product.name(),
+                            product.price(),
+                            item.getQuantity()
+                    );
+                })
+                .toList();
     }
 }
