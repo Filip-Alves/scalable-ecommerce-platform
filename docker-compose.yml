@@ -118,5 +118,5 @@ services:
 volumes:
   postgres-data:
     name: ecommerce-postgres-data
-  es-data: # volume pour Elasticsearch
+  es-data:
     driver: local
