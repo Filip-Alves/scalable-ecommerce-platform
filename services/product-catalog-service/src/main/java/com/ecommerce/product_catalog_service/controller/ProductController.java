@@ -1,6 +1,7 @@
 package com.ecommerce.product_catalog_service.controller;
 
 import com.ecommerce.product_catalog_service.dto.CreateProductRequest;
+import com.ecommerce.product_catalog_service.dto.StockResponse;
 import com.ecommerce.product_catalog_service.dto.UpdateProductRequest;
 import com.ecommerce.product_catalog_service.model.Product;
 import com.ecommerce.product_catalog_service.service.ProductService;
@@ -56,4 +57,5 @@ public class ProductController {
 
         return ResponseEntity.noContent().build();
     }
+
 }
