@@ -1,6 +1,4 @@
-CREATE SCHEMA IF NOT EXISTS order_schema;
-
-CREATE TABLE order_schema.orders (
+CREATE TABLE orders (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
     order_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

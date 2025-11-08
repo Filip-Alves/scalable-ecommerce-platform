@@ -121,4 +121,9 @@ public class CartService {
                 })
                 .toList();
     }
+
+    @Transactional
+    public void clearCart(Long userId) {
+        cartItemRepository.deleteByCartId(userId);
+    }
 }

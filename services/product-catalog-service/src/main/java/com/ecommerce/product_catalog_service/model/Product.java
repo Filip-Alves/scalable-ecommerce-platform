@@ -26,4 +26,7 @@ public class Product {
 
     @Column(name = "price", nullable = false)
     private BigDecimal price;
+
+    @Column(name = "stock", nullable = false)
+    private Integer stock = 0;
 }

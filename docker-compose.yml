@@ -57,6 +57,22 @@ services:
       - logstash
     restart: always
 
+  order-service:
+    build:
+      context: ./services/order-service
+    image: ecommerce/order-service
+    container_name: ecommerce-order-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVICE_NAME=order-service
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    depends_on:
+      - postgres
+      - consul
+      - logstash
+    restart: always
+
   logstash:
     build: { context: ./logstash_build } # build custom
     image: ecommerce/logstash-custom

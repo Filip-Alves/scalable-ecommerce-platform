@@ -58,4 +58,14 @@ public class ProductController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/{id}/stock")
+    public ResponseEntity<StockResponse> getStock(@PathVariable Long id) {
+        Product product = productService.getProductById(id);
+
+        StockResponse response = new StockResponse();
+        response.setProductId(product.getId());
+        response.setAvailableStock(product.getStock());
+        return ResponseEntity.ok(response);
+    }
+
 }

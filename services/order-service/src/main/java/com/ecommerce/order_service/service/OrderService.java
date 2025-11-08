@@ -26,21 +26,21 @@ public class OrderService {
 
     @Transactional
     public OrderResponse checkout(Long userId) {
-        // 1. Get cart
-        CartResponse cart = webClientBuilder.build()
+        List<CartItemDto> cartItems = webClientBuilder.build()
                 .get()
                 .uri("http://shopping-cart-service/api/cart")
                 .header("X-User-Id", userId.toString())
                 .retrieve()
-                .bodyToMono(CartResponse.class)
+                .bodyToFlux(CartItemDto.class)  // Flux au lieu de Mono
+                .collectList()
                 .block();
 
-        if (cart == null || cart.getItems() == null || cart.getItems().isEmpty()) {
+        if (cartItems == null || cartItems.isEmpty()) {
             throw new RuntimeException("Cart is empty");
         }
 
         // 2. Check stock
-        for (CartItemDto item : cart.getItems()) {
+        for (CartItemDto item : cartItems) {
             StockResponse stock = webClientBuilder.build()
                     .get()
                     .uri("http://product-catalog-service/api/products/{id}/stock", item.getProductId())
@@ -49,7 +49,7 @@ public class OrderService {
                     .block();
 
             if (stock == null || stock.getAvailableStock() < item.getQuantity()) {
-                throw new RuntimeException("Insufficient stock for product: " + item.getProductName());
+                throw new RuntimeException("Insufficient stock for product: " + item.getName());
             }
         }
 
@@ -59,10 +59,10 @@ public class OrderService {
         order.setStatus(OrderStatus.PENDING);
 
         BigDecimal total = BigDecimal.ZERO;
-        for (CartItemDto item : cart.getItems()) {
+        for (CartItemDto item : cartItems) {
             OrderItem orderItem = new OrderItem();
             orderItem.setProductId(item.getProductId());
-            orderItem.setProductName(item.getProductName());
+            orderItem.setProductName(item.getName());
             orderItem.setQuantity(item.getQuantity());
             orderItem.setPriceAtOrder(item.getPrice());
             order.addItem(orderItem);

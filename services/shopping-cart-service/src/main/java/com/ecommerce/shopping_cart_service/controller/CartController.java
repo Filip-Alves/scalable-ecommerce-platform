@@ -58,4 +58,10 @@ public class CartController {
         return ResponseEntity.ok(items);
     }
 
+    @DeleteMapping
+    public ResponseEntity<Void> clearCart(@RequestHeader("X-User-Id") Long userId) {
+        cartService.clearCart(userId);
+        return ResponseEntity.noContent().build();
+    }
+
 }
