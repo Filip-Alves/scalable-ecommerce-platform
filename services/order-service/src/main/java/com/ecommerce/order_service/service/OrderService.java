@@ -39,7 +39,7 @@ public class OrderService {
             throw new RuntimeException("Cart is empty");
         }
 
-        // 2. Check stock
+        // Check stock
         for (CartItemDto item : cartItems) {
             StockResponse stock = webClientBuilder.build()
                     .get()
@@ -53,7 +53,7 @@ public class OrderService {
             }
         }
 
-        // 3. Create Order
+        // Create Order
         Order order = new Order();
         order.setUserId(userId);
         order.setStatus(OrderStatus.PENDING);
@@ -73,7 +73,7 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        // 4. Clear cart
+        // Clear cart
         webClientBuilder.build()
                 .delete()
                 .uri("http://shopping-cart-service/api/cart")
@@ -104,5 +104,20 @@ public class OrderService {
 
         response.setItems(items);
         return response;
+    }
+
+    public List<OrderSummaryResponse> getUserOrders(Long userId) {
+        List<Order> orders = orderRepository.findByUserIdOrderByOrderDateDesc(userId);
+
+        return orders.stream()
+                .map(order -> {
+                    OrderSummaryResponse response = new OrderSummaryResponse();
+                    response.setOrderId(order.getId());
+                    response.setOrderDate(order.getOrderDate());
+                    response.setTotalAmount(order.getTotalAmount());
+                    response.setStatus(order.getStatus());
+                    return response;
+                })
+                .collect(Collectors.toList());
     }
 }
