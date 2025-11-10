@@ -120,4 +120,15 @@ public class OrderService {
                 })
                 .collect(Collectors.toList());
     }
+
+    public OrderResponse getOrderById(Long orderId, Long userId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (!order.getUserId().equals(userId)) {
+            throw new RuntimeException("Unauthorized access to this order");
+        }
+
+        return mapToOrderResponse(order);
+    }
 }
