@@ -73,6 +73,22 @@ services:
       - logstash
     restart: always
 
+  payment-service:
+    build:
+      context: ./services/payment-service
+    image: ecommerce/payment-service
+    container_name: ecommerce-payment-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVICE_NAME=payment-service
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    depends_on:
+      - postgres
+      - consul
+      - logstash
+    restart: always
+
   logstash:
     build: { context: ./logstash_build } # build custom
     image: ecommerce/logstash-custom
