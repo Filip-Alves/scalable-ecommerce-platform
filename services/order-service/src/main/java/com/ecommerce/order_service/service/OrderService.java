@@ -26,12 +26,13 @@ public class OrderService {
 
     @Transactional
     public OrderResponse checkout(Long userId) {
+        // 1. Get cart
         List<CartItemDto> cartItems = webClientBuilder.build()
                 .get()
                 .uri("http://shopping-cart-service/api/cart")
                 .header("X-User-Id", userId.toString())
                 .retrieve()
-                .bodyToFlux(CartItemDto.class)  // Flux au lieu de Mono
+                .bodyToFlux(CartItemDto.class)
                 .collectList()
                 .block();
 
@@ -39,7 +40,7 @@ public class OrderService {
             throw new RuntimeException("Cart is empty");
         }
 
-        // Check stock
+        // 2. Check stock
         for (CartItemDto item : cartItems) {
             StockResponse stock = webClientBuilder.build()
                     .get()
@@ -53,7 +54,7 @@ public class OrderService {
             }
         }
 
-        // Create Order
+        // 3. Create Order
         Order order = new Order();
         order.setUserId(userId);
         order.setStatus(OrderStatus.PENDING);
@@ -73,7 +74,34 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        // Clear cart
+        // 4. Process Payment
+        ProcessPaymentRequest paymentRequest = new ProcessPaymentRequest();
+        paymentRequest.setOrderId(savedOrder.getId());
+        paymentRequest.setUserId(userId);
+        paymentRequest.setAmount(total);
+        paymentRequest.setPaymentMethod("CREDIT_CARD"); // Default
+
+        try {
+            PaymentResponse paymentResponse = webClientBuilder.build()
+                    .post()
+                    .uri("http://payment-service/api/payments")
+                    .bodyValue(paymentRequest)
+                    .retrieve()
+                    .bodyToMono(PaymentResponse.class)
+                    .block();
+
+            if (paymentResponse != null && "SUCCESS".equals(paymentResponse.getStatus())) {
+                savedOrder.setStatus(OrderStatus.PAID);
+            } else {
+                savedOrder.setStatus(OrderStatus.PAYMENT_FAILED);
+            }
+        } catch (Exception e) {
+            savedOrder.setStatus(OrderStatus.PAYMENT_FAILED);
+        }
+
+        orderRepository.save(savedOrder);
+
+        // 5. Clear cart (only if payment successful or failed - cart is processed)
         webClientBuilder.build()
                 .delete()
                 .uri("http://shopping-cart-service/api/cart")
