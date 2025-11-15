@@ -26,7 +26,7 @@ public class OrderService {
 
     @Transactional
     public OrderResponse checkout(Long userId) {
-        // 1. Get cart
+
         List<CartItemDto> cartItems = webClientBuilder.build()
                 .get()
                 .uri("http://shopping-cart-service/api/cart")
@@ -40,7 +40,7 @@ public class OrderService {
             throw new RuntimeException("Cart is empty");
         }
 
-        // 2. Check stock
+        //Check stock
         for (CartItemDto item : cartItems) {
             StockResponse stock = webClientBuilder.build()
                     .get()
@@ -54,7 +54,7 @@ public class OrderService {
             }
         }
 
-        // 3. Create Order
+        // Order
         Order order = new Order();
         order.setUserId(userId);
         order.setStatus(OrderStatus.PENDING);
@@ -74,7 +74,7 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        // 4. Process Payment
+        // Payment
         ProcessPaymentRequest paymentRequest = new ProcessPaymentRequest();
         paymentRequest.setOrderId(savedOrder.getId());
         paymentRequest.setUserId(userId);
@@ -101,7 +101,7 @@ public class OrderService {
 
         orderRepository.save(savedOrder);
 
-        // 5. Clear cart (only if payment successful or failed - cart is processed)
+        // Clear cart (if payment successful or failed)
         webClientBuilder.build()
                 .delete()
                 .uri("http://shopping-cart-service/api/cart")
@@ -158,5 +158,40 @@ public class OrderService {
         }
 
         return mapToOrderResponse(order);
+    }
+
+    @Transactional
+    public OrderResponse retryPayment(Long orderId, Long userId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // Vérif commande appartient à l'utilisateur
+        if (!order.getUserId().equals(userId)) {
+            throw new RuntimeException("Unauthorized access to this order");
+        }
+
+        if (order.getStatus() != OrderStatus.PAYMENT_FAILED) {
+            throw new RuntimeException("Payment retry only allowed for failed payments");
+        }
+
+        try {
+            PaymentResponse paymentResponse = webClientBuilder.build()
+                    .post()
+                    .uri("http://payment-service/api/payments/{orderId}/retry", orderId)
+                    .retrieve()
+                    .bodyToMono(PaymentResponse.class)
+                    .block();
+
+            if (paymentResponse != null && "SUCCESS".equals(paymentResponse.getStatus())) {
+                order.setStatus(OrderStatus.PAID);
+            } else {
+                order.setStatus(OrderStatus.PAYMENT_FAILED);
+            }
+        } catch (Exception e) {
+            order.setStatus(OrderStatus.PAYMENT_FAILED);
+        }
+
+        Order savedOrder = orderRepository.save(order);
+        return mapToOrderResponse(savedOrder);
     }
 }

@@ -39,4 +39,12 @@ public class OrderController {
         OrderResponse order = orderService.getOrderById(id, userId);
         return ResponseEntity.ok(order);
     }
+
+    @PostMapping("/{orderId}/retry-payment")
+    public ResponseEntity<OrderResponse> retryPayment(
+            @PathVariable Long orderId,
+            @RequestHeader("X-User-Id") Long userId) {
+        OrderResponse response = orderService.retryPayment(orderId, userId);
+        return ResponseEntity.ok(response);
+    }
 }
