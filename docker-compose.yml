@@ -89,6 +89,27 @@ services:
       - logstash
     restart: always
 
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: ecommerce-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    restart: always
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: ecommerce-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    restart: always
+
   logstash:
     build: { context: ./logstash_build } # build custom
     image: ecommerce/logstash-custom
@@ -151,4 +172,6 @@ volumes:
   postgres-data:
     name: ecommerce-postgres-data
   es-data:
+    driver: local
+  rabbitmq-data:
     driver: local
