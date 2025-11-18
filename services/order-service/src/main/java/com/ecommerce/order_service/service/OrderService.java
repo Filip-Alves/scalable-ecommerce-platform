@@ -1,6 +1,7 @@
 package com.ecommerce.order_service.service;
 
 import com.ecommerce.order_service.dto.*;
+import com.ecommerce.order_service.event.OrderNotificationEvent;
 import com.ecommerce.order_service.model.Order;
 import com.ecommerce.order_service.model.OrderItem;
 import com.ecommerce.order_service.model.OrderStatus;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,10 +20,14 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final WebClient.Builder webClientBuilder;
+    private final NotificationPublisher notificationPublisher;
 
-    public OrderService(OrderRepository orderRepository, WebClient.Builder webClientBuilder) {
+    public OrderService(OrderRepository orderRepository,
+                        WebClient.Builder webClientBuilder,
+                        NotificationPublisher notificationPublisher) {
         this.orderRepository = orderRepository;
         this.webClientBuilder = webClientBuilder;
+        this.notificationPublisher = notificationPublisher;
     }
 
     @Transactional
@@ -74,6 +80,9 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
+        publishOrderEvent("ORDER_CREATED", savedOrder, "user@example.com"); // Email mock pour l'instant
+
+
         // Payment
         ProcessPaymentRequest paymentRequest = new ProcessPaymentRequest();
         paymentRequest.setOrderId(savedOrder.getId());
@@ -92,8 +101,14 @@ public class OrderService {
 
             if (paymentResponse != null && "SUCCESS".equals(paymentResponse.getStatus())) {
                 savedOrder.setStatus(OrderStatus.PAID);
+                orderRepository.save(savedOrder);
+
+                publishOrderEvent("PAYMENT_SUCCESS", savedOrder, "user3@example.com");
             } else {
                 savedOrder.setStatus(OrderStatus.PAYMENT_FAILED);
+                orderRepository.save(savedOrder);
+
+                publishOrderEvent("PAYMENT_FAILED", savedOrder, "user3@example.com");
             }
         } catch (Exception e) {
             savedOrder.setStatus(OrderStatus.PAYMENT_FAILED);
@@ -193,5 +208,17 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
         return mapToOrderResponse(savedOrder);
+    }
+
+    private void publishOrderEvent(String eventType, Order order, String userEmail) {
+        OrderNotificationEvent event = new OrderNotificationEvent();
+        event.setEventType(eventType);
+        event.setOrderId(order.getId());
+        event.setUserId(order.getUserId());
+        event.setUserEmail(userEmail);
+        event.setTotalAmount(order.getTotalAmount());
+        event.setTimestamp(LocalDateTime.now());
+
+        notificationPublisher.publishOrderEvent(event);
     }
 }
