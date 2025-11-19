@@ -89,6 +89,21 @@ services:
       - logstash
     restart: always
 
+  notification-service:
+    build:
+      context: ./services/notification-service
+    image: ecommerce/notification-service
+    container_name: ecommerce-notification-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVICE_NAME=notification-service
+    depends_on:
+      - rabbitmq
+      - mailhog
+      - consul
+      - logstash
+    restart: always
+
   rabbitmq:
     image: rabbitmq:3.12-management
     container_name: ecommerce-rabbitmq
