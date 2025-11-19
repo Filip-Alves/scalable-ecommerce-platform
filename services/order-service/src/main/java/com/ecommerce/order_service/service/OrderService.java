@@ -80,7 +80,6 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        publishOrderEvent("ORDER_CREATED", savedOrder, "user@example.com"); // Email mock pour l'instant
 
 
         // Payment
