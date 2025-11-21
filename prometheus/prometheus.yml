@@ -1,8 +1,12 @@
+global:
+  scrape_interval: 15s
+
 scrape_configs:
-  - job_name: "consul"
+  - job_name: "consul-services"
     consul_sd_configs:
-      - server: "http://consul:8500"
-        services: [] # vide = tous les services
+      - server: "consul:8500"
+        services: []
+    metrics_path: "/actuator/prometheus"
     relabel_configs:
       - source_labels: ["__meta_consul_service"]
         target_label: "service"
@@ -10,4 +14,3 @@ scrape_configs:
           ["__meta_consul_service_address", "__meta_consul_service_port"]
         separator: ":"
         target_label: "__address__"
-        replacement: "$1:$2"
