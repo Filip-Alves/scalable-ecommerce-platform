@@ -17,13 +17,17 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final Random random = new Random();
+    private final MetricsService metricsService;
 
-    public PaymentService(PaymentRepository paymentRepository) {
+    public PaymentService(PaymentRepository paymentRepository, MetricsService metricsService) {
         this.paymentRepository = paymentRepository;
+        this.metricsService = metricsService;
     }
 
     @Transactional
     public PaymentResponse processPayment(ProcessPaymentRequest request) {
+        metricsService.incrementPaymentsProcessed();
+
         Payment payment = new Payment();
         payment.setOrderId(request.getOrderId());
         payment.setUserId(request.getUserId());
@@ -38,8 +42,10 @@ public class PaymentService {
         if (isSuccess) {
             payment.setStatus(PaymentStatus.SUCCESS);
             payment.setPaymentDate(LocalDateTime.now());
+            metricsService.incrementPaymentsSuccess();
         } else {
             payment.setStatus(PaymentStatus.FAILED);
+            metricsService.incrementPaymentsFailed();
         }
 
         Payment savedPayment = paymentRepository.save(payment);

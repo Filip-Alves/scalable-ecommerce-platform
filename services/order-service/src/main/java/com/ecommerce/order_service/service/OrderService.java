@@ -21,13 +21,16 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final WebClient.Builder webClientBuilder;
     private final NotificationPublisher notificationPublisher;
+    private final MetricsService metricsService;
 
     public OrderService(OrderRepository orderRepository,
                         WebClient.Builder webClientBuilder,
-                        NotificationPublisher notificationPublisher) {
+                        NotificationPublisher notificationPublisher,
+                        MetricsService metricsService) {
         this.orderRepository = orderRepository;
         this.webClientBuilder = webClientBuilder;
         this.notificationPublisher = notificationPublisher;
+        this.metricsService = metricsService;
     }
 
     @Transactional
@@ -79,7 +82,7 @@ public class OrderService {
         order.setTotalAmount(total);
 
         Order savedOrder = orderRepository.save(order);
-
+        metricsService.incrementOrdersCreated();
 
 
         // Payment
@@ -101,12 +104,12 @@ public class OrderService {
             if (paymentResponse != null && "SUCCESS".equals(paymentResponse.getStatus())) {
                 savedOrder.setStatus(OrderStatus.PAID);
                 orderRepository.save(savedOrder);
-
+                metricsService.incrementPaymentsSuccess();
                 publishOrderEvent("PAYMENT_SUCCESS", savedOrder, "user3@example.com");
             } else {
                 savedOrder.setStatus(OrderStatus.PAYMENT_FAILED);
                 orderRepository.save(savedOrder);
-
+                metricsService.incrementPaymentsFailed();
                 publishOrderEvent("PAYMENT_FAILED", savedOrder, "user3@example.com");
             }
         } catch (Exception e) {
