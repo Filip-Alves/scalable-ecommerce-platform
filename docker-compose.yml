@@ -221,3 +221,8 @@ volumes:
     driver: local
   grafana-data:
     driver: local
+
+networks:
+  default:
+    name: ecommerce-network
+    driver: bridge
