@@ -191,6 +191,33 @@ services:
     depends_on:
       - elasticsearch
 
+  jenkins:
+    image: jenkins/jenkins:lts-jdk21
+    container_name: ecommerce-jenkins
+    privileged: true
+    user: root
+    ports:
+      - "8081:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins-data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    restart: always
+
+  docker-in-docker:
+    image: docker:dind
+    container_name: ecommerce-dind
+    privileged: true
+    environment:
+      DOCKER_TLS_CERTDIR: ""
+    volumes:
+      - jenkins-data:/var/jenkins_home
+      - dind-storage:/var/lib/docker
+    command: ["--storage-driver=overlay2"]
+    restart: always
+
   postgres:
     image: postgres:15
     container_name: ecommerce-postgres
@@ -220,6 +247,10 @@ volumes:
   prometheus-data:
     driver: local
   grafana-data:
+    driver: local
+  jenkins-data:
+    driver: local
+  dind-storage:
     driver: local
 
 networks:
