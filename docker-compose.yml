@@ -192,7 +192,7 @@ services:
       - elasticsearch
 
   jenkins:
-    image: jenkins/jenkins:lts-jdk21
+    build: ./jenkins
     container_name: ecommerce-jenkins
     privileged: true
     user: root
